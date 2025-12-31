@@ -1,4 +1,5 @@
-# Riftbound Event Filter
+# RiftHub
+## Riftbound Event Filter
 
 A Chrome browser extension that enhances the Riftbound event browsing experience with visual filters, event categorization, and personal event tracking.
 
