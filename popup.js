@@ -1,39 +1,81 @@
-// Popup script for Riftbound Event Filter
+// Popup script for RiftHub
 
-// Load saved preferences
-function loadPreferences() {
-  chrome.storage.sync.get(['preferences'], (result) => {
-    if (result.preferences) {
-      const prefs = result.preferences;
-      document.getElementById('default-free-only').checked = prefs.defaultFreeOnly || false;
-      document.getElementById('auto-hide-past').checked = prefs.autoHidePast || false;
-    }
-  });
+// Fun loading messages for each sync stage
+const SYNC_MESSAGES = {
+  lookingForPage: [
+    "Searching the Rift for your events...",
+    "Peering into the Rift...",
+    "Consulting the Chronoshift...",
+    "Summoners, stand by..."
+  ],
+  gettingIds: [
+    "Tracking event IDs across timelines...",
+    "Stabilizing Riftbound timelines...",
+    "Tuning into Summoner frequencies...",
+    "Assembling your event roster..."
+  ],
+  fetchingApi: [
+    "Fetching events from the Riftbound API...",
+    "Syncing with Riftbound servers...",
+    "Reconciling timelines...",
+    "Resolving multiverse inconsistencies..."
+  ],
+  matching: [
+    "Binding registered events to your profile...",
+    "Aligning registered events...",
+    "Drafting your upcoming events...",
+    "Locking in..."
+  ],
+  almostDone: [
+    "Rift stabilization nearly complete...",
+    "Final checks before the match begins...",
+    "Events locked in...",
+    "Ready to queue..."
+  ],
+  complete: [
+    "Your journey begins...",
+    "Loading complete. GLHF!",
+    "Rift stabilized!",
+    "No minions were harmed in this process."
+  ]
+};
+
+// Get a random message from a category
+function getRandomMessage(category) {
+  const messages = SYNC_MESSAGES[category];
+  if (!messages || messages.length === 0) return '';
+  return messages[Math.floor(Math.random() * messages.length)];
 }
 
-// Save preferences
-function savePreferences() {
-  const preferences = {
-    defaultFreeOnly: document.getElementById('default-free-only').checked,
-    autoHidePast: document.getElementById('auto-hide-past').checked,
-    savedAt: new Date().toISOString()
-  };
+// Show/hide sync loading indicator
+function showSyncLoading(show, text = 'Syncing events...', progress = '') {
+  const loadingEl = document.getElementById('sync-loading');
+  const containerEl = document.getElementById('my-events-container');
+  const textEl = document.getElementById('sync-loading-text');
+  const progressEl = document.getElementById('sync-loading-progress');
+  const syncBtn = document.getElementById('sync-events-btn');
 
-  chrome.storage.sync.set({ preferences }, () => {
-    showStatus('Preferences saved successfully!', 'success');
-  });
-}
-
-// Reset to defaults
-function resetPreferences() {
-  if (confirm('Reset all preferences to defaults?')) {
-    document.getElementById('default-free-only').checked = false;
-    document.getElementById('auto-hide-past').checked = false;
-
-    chrome.storage.sync.remove(['preferences', 'filterState'], () => {
-      showStatus('Reset to defaults', 'success');
-    });
+  if (show) {
+    loadingEl.style.display = 'block';
+    containerEl.style.display = 'none';
+    textEl.textContent = text;
+    progressEl.textContent = progress;
+    syncBtn.disabled = true;
+    syncBtn.textContent = '⏳ Syncing...';
+  } else {
+    loadingEl.style.display = 'none';
+    containerEl.style.display = 'block';
+    syncBtn.disabled = false;
+    syncBtn.textContent = '🔄 Sync My Events';
   }
+}
+
+// Update sync loading progress
+function updateSyncProgress(text, progress = '') {
+  const textEl = document.getElementById('sync-loading-text');
+  const progressEl = document.getElementById('sync-loading-progress');
+  if (textEl) textEl.textContent = text;
+  if (progressEl) progressEl.textContent = progress;
 }
 
 // Show status message
@@ -59,7 +101,7 @@ function clearCache() {
 
 // Force clear ALL data (both local and sync storage)
 function forceClearAll() {
-  if (confirm('This will clear ALL extension data including preferences. Continue?')) {
+  if (confirm('This will clear ALL extension data. Continue?')) {
     Promise.all([
       new Promise(resolve => chrome.storage.local.clear(resolve)),
       new Promise(resolve => chrome.storage.sync.clear(resolve))
@@ -68,7 +110,6 @@ function forceClearAll() {
       // Reset UI
       loadMyEvents();
       initCalendar();
-      loadPreferences();
 
       // Clear calendar state
       calendarState.events = [];
@@ -88,13 +129,6 @@ function visitSite() {
   chrome.tabs.create({ url: 'https://locator.riftbound.uvsgames.com/events' });
 }
 
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-    savePreferences();
-  }
-});
 
 
 // Check if event is in the past
@@ -168,7 +202,7 @@ function loadMyEvents() {
           <div class="event-card ${priceClass}">
             <div class="event-card-header">
               <div>
-                <div class="event-title">${event.title}${sourceIndicator}</div>
+                ${event.id ? `<a href="#" class="event-title-link" data-event-id="${event.id}">${event.title}${sourceIndicator}</a>` : `<div class="event-title">${event.title}${sourceIndicator}</div>`}
                 <span class="event-type" style="background: ${event.typeColor}20; color: ${event.typeColor};">${event.type}</span>
               </div>
               <button class="event-sync-btn" data-event-index="${index}" title="Add to Google Calendar">
@@ -180,7 +214,7 @@ function loadMyEvents() {
               ${event.time ? `<div class="event-detail-row"><span class="event-detail-icon">⏰</span> ${event.time}</div>` : ''}
               ${event.location ? `<div class="event-detail-row"><span class="event-detail-icon">📍</span> ${event.location}</div>` : ''}
               ${event.store ? `<div class="event-detail-row"><span class="event-detail-icon">🏪</span> ${event.store}</div>` : ''}
-              ${event.format ? `<div class="event-detail-row"><span class="event-detail-icon">🎯</span> ${event.format}</div>` : ''}
+              ${event.format && event.format.toLowerCase() !== 'other' ? `<div class="event-detail-row"><span class="event-detail-icon">🎯</span> ${event.format}</div>` : ''}
               ${capacityInfo}
               <div class="event-detail-row"><span class="event-detail-icon">💰</span> ${event.price || 'Price TBD'}</div>
             </div>
@@ -204,6 +238,18 @@ function loadMyEvents() {
           const index = parseInt(btn.dataset.eventIndex);
           const event = events[index];
           addEventToGoogleCalendar(event);
+        });
+      });
+
+      // Add click handlers for event title links
+      container.querySelectorAll('.event-title-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const eventId = link.dataset.eventId;
+          if (eventId) {
+            chrome.tabs.create({ url: `https://locator.riftbound.uvsgames.com/events/${eventId}` });
+          }
         });
       });
     } else {
@@ -245,60 +291,79 @@ async function fetchAllApiEvents() {
   const pageSize = 500;
 
   console.log('[RiftHub Popup] Fetching all upcoming events...');
+  updateSyncProgress(getRandomMessage('fetchingApi'), 'Page 1');
 
-  while (true) {
-    const events = await window.RiftboundAPI.fetchEvents({
-      fetchAll: true,
-      pageSize: pageSize,
-      page: page
-    });
+  try {
+    while (true) {
+      console.log(`[RiftHub Popup] Fetching page ${page}...`);
+      updateSyncProgress(getRandomMessage('fetchingApi'), `Page ${page} (${allEvents.length} events so far)`);
 
-    console.log(`[RiftHub Popup] Page ${page}: fetched ${events.length} events`);
+      const events = await window.RiftboundAPI.fetchEvents({
+        fetchAll: true,
+        pageSize: pageSize,
+        page: page
+      });
 
-    if (events.length === 0) {
-      break;
+      console.log(`[RiftHub Popup] Page ${page}: fetched ${events.length} events`);
+
+      if (!events || events.length === 0) {
+        console.log('[RiftHub Popup] No events returned from API');
+        break;
+      }
+
+      allEvents.push(...events);
+
+      // If we got fewer than pageSize, we've reached the end
+      if (events.length < pageSize) {
+        break;
+      }
+
+      page++;
+
+      // Safety limit
+      if (page > 10) {
+        console.log('[RiftHub Popup] Reached page limit');
+        break;
+      }
     }
-
-    allEvents.push(...events);
-
-    // If we got fewer than pageSize, we've reached the end
-    if (events.length < pageSize) {
-      break;
-    }
-
-    page++;
-
-    // Safety limit
-    if (page > 10) {
-      console.log('[RiftHub Popup] Reached page limit');
-      break;
-    }
+  } catch (error) {
+    console.error('[RiftHub Popup] Error fetching API events:', error);
   }
 
   console.log('[RiftHub Popup] Total events fetched:', allEvents.length);
+  updateSyncProgress(getRandomMessage('matching'), `${allEvents.length} events fetched`);
   return allEvents;
 }
 
 // Enrich event IDs with full API data
 async function enrichEventIdsWithApi(eventIds) {
   if (!eventIds || eventIds.length === 0) {
+    console.log('[RiftHub Popup] No event IDs to enrich');
     return [];
   }
 
   console.log('[RiftHub Popup] Enriching event IDs:', eventIds);
+  updateSyncProgress(getRandomMessage('matching'), `${eventIds.length} events to check`);
 
   // Fetch ALL upcoming events from API with pagination
   const allApiEvents = await fetchAllApiEvents();
 
-  console.log('[RiftHub Popup] Total API events:', allApiEvents.length);
+  console.log('[RiftHub Popup] Total API events fetched:', allApiEvents.length);
 
   if (allApiEvents.length === 0) {
-    console.log('[RiftHub Popup] No API events, cannot enrich');
+    console.log('[RiftHub Popup] No API events returned - API may be down or blocked');
     return [];
   }
 
+  // Log first few API events to see their structure
+  console.log('[RiftHub Popup] Sample API event:', allApiEvents[0]);
+
+  updateSyncProgress(getRandomMessage('matching'), `Checking ${eventIds.length} events`);
+
   // Match event IDs with API events
   const enrichedEvents = [];
+  let matchedCount = 0;
+  let notFoundCount = 0;
 
   for (const eventId of eventIds) {
     const apiEvent = allApiEvents.find(e => e.id === eventId);
@@ -307,30 +372,34 @@ async function enrichEventIdsWithApi(eventIds) {
       const transformed = window.RiftboundAPI.transformApiEvent(apiEvent);
       transformed.isRegistered = true;
       enrichedEvents.push(transformed);
-      console.log('[RiftHub Popup] Matched event:', transformed.title);
+      matchedCount++;
+      console.log('[RiftHub Popup] Matched event:', transformed.title, '(ID:', eventId, ')');
     } else {
-      console.log('[RiftHub Popup] Event ID not found (likely past):', eventId);
+      notFoundCount++;
+      console.log('[RiftHub Popup] Event ID not found in API (likely past event):', eventId);
     }
   }
 
+  console.log(`[RiftHub Popup] Matching complete: ${matchedCount} matched, ${notFoundCount} not found`);
+  updateSyncProgress(getRandomMessage('almostDone'), `Found ${matchedCount} upcoming events`);
   return enrichedEvents;
 }
 
 // Sync events from My Events page
 async function syncMyEvents() {
-  showStatus('Looking for My Events page...', 'success');
+  showSyncLoading(true, getRandomMessage('lookingForPage'), '');
 
   // First, try to find an existing My Events tab
   chrome.tabs.query({ url: 'https://locator.riftbound.uvsgames.com/my-events*' }, async (tabs) => {
     if (tabs && tabs.length > 0) {
       // Found an existing My Events tab, send sync message
       const myEventsTab = tabs[0];
-      showStatus('Getting event IDs...', 'success');
+      updateSyncProgress(getRandomMessage('gettingIds'), 'Found My Events tab');
 
       chrome.tabs.sendMessage(myEventsTab.id, { action: 'getEventIds' }, async (response) => {
         if (chrome.runtime.lastError) {
           // Content script not loaded, reload the tab and wait
-          showStatus('Refreshing My Events page...', 'success');
+          updateSyncProgress(getRandomMessage('lookingForPage'), 'Refreshing page...');
           chrome.tabs.reload(myEventsTab.id, {}, () => {
             // Wait for page to load, then try to get IDs from storage
             setTimeout(async () => {
@@ -349,7 +418,7 @@ async function syncMyEvents() {
       });
     } else {
       // No My Events tab found, open one
-      showStatus('Opening My Events page...', 'success');
+      updateSyncProgress(getRandomMessage('lookingForPage'), 'Opening page...');
       chrome.tabs.create({ url: 'https://locator.riftbound.uvsgames.com/my-events', active: false }, (newTab) => {
         // Wait for page to load and content script to save IDs
         setTimeout(async () => {
@@ -363,6 +432,7 @@ async function syncMyEvents() {
 // Process event IDs from storage
 async function processEventIdsFromStorage() {
   console.log('[RiftHub Popup] Getting event IDs from storage...');
+  updateSyncProgress(getRandomMessage('gettingIds'), '');
   chrome.storage.local.get(['myEventIds'], async (result) => {
     console.log('[RiftHub Popup] Storage result:', result);
     if (result.myEventIds && result.myEventIds.length > 0) {
@@ -370,6 +440,7 @@ async function processEventIdsFromStorage() {
       await processEventIds(result.myEventIds);
     } else {
       console.log('[RiftHub Popup] No event IDs found in storage');
+      showSyncLoading(false);
       showStatus('No registered events found', 'success');
       initCalendar();
     }
@@ -379,7 +450,7 @@ async function processEventIdsFromStorage() {
 // Process event IDs - enrich with API data and save
 async function processEventIds(eventIds) {
   console.log('[RiftHub Popup] Processing event IDs:', eventIds);
-  showStatus(`Found ${eventIds.length} events, fetching details...`, 'success');
+  updateSyncProgress(getRandomMessage('fetchingApi'), `Found ${eventIds.length} events`);
 
   try {
     console.log('[RiftHub Popup] Calling enrichEventIdsWithApi...');
@@ -398,6 +469,7 @@ async function processEventIds(eventIds) {
       myEvents: upcomingEvents,
       myEventsLastSync: new Date().toISOString()
     }, () => {
+      showSyncLoading(false);
       const pastInfo = pastCount > 0 ? ` (${pastCount} past)` : '';
       showStatus(`Synced ${upcomingEvents.length} upcoming events!${pastInfo}`, 'success');
       console.log('[RiftHub Popup] Saved to storage and calling initCalendar');
@@ -405,6 +477,7 @@ async function processEventIds(eventIds) {
     });
   } catch (error) {
     console.error('[RiftHub Popup] Error enriching events:', error);
+    showSyncLoading(false);
     showStatus('Error fetching event details', 'error');
   }
 }
@@ -657,7 +730,7 @@ function showSelectedDayEvents(year, month, day) {
             ${event.time ? `<div style="margin-bottom: 2px;">⏰ ${event.time}</div>` : ''}
             ${event.store ? `<div>🏪 ${event.store}</div>` : ''}
             ${event.location ? `<div>📍 ${event.location}</div>` : ''}
-            ${event.format ? `<div>🎯 ${event.format}</div>` : ''}
+            ${event.format && event.format.toLowerCase() !== 'other' ? `<div>🎯 ${event.format}</div>` : ''}
             ${capacityLine}
             <div>💰 ${event.price || 'Price TBD'}</div>
           </div>
@@ -1400,8 +1473,6 @@ function addAllEventsToGoogleCalendar() {
 // Event Listeners
 // ============================================
 
-document.getElementById('save-btn').addEventListener('click', savePreferences);
-document.getElementById('reset-btn').addEventListener('click', resetPreferences);
 document.getElementById('clear-cache').addEventListener('click', clearCache);
 document.getElementById('force-clear').addEventListener('click', forceClearAll);
 document.getElementById('visit-site').addEventListener('click', visitSite);
@@ -1414,7 +1485,6 @@ document.getElementById('visit-my-events')?.addEventListener('click', (e) => {
 document.getElementById('sync-events-btn').addEventListener('click', syncMyEvents);
 
 // Initialize
-loadPreferences();
 initCalendar(); // This will call loadMyEvents() after loading data
 initSearch();
 initAutocomplete();

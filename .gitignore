@@ -9,7 +9,28 @@ Thumbs.db
 .idea/
 *.sublime-*
 
-# Documentation artifacts (keep only source docs)
+# Claude Code settings
+.claude/
+
+# Screenshots and images (not needed for extension)
+*.JPG
+*.jpg
+*.jpeg
+
+# Backup/duplicate folders
+google/
+riftfound-master/
+
+# Extra icon files
+icons/README.md
+icons/image_1.png
+icons/new/
+
+# Unused files
+content.js
+styles.css
+
+# Documentation artifacts (keep only README)
 START_HERE.html
 create-icons.html
 GETTING_STARTED.md
@@ -54,3 +75,4 @@ Thumbs.db
 *.mkv
 *.mp4
 *.avi
+*.png.bak

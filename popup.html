@@ -288,6 +288,20 @@
       cursor: wait;
     }
 
+    .event-title-link {
+      color: #f1f5f9;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .event-title-link:hover {
+      color: #3b82f6;
+      text-decoration: underline;
+    }
+
     .event-card.free {
       border-left-color: #10b981;
     }
@@ -817,6 +831,11 @@
 
     <div class="section">
       <div class="section-title">📋 Upcoming Events</div>
+      <div id="sync-loading" style="display: none; text-align: center; padding: 20px;">
+        <div class="spinner" style="margin: 0 auto 12px;"></div>
+        <div id="sync-loading-text" style="font-size: 12px; color: #94a3b8;">Syncing events...</div>
+        <div id="sync-loading-progress" style="font-size: 10px; color: #64748b; margin-top: 4px;"></div>
+      </div>
       <div id="my-events-container">
         <div class="info-box">
           <p style="margin: 0; font-size: 12px;">Visit <a href="#" id="visit-my-events" style="color: #3b82f6; text-decoration: underline;">My Events</a> to sync your registered events</p>
@@ -824,23 +843,6 @@
       </div>
       <button class="btn btn-secondary" id="sync-events-btn" style="margin-top: 12px;">🔄 Sync My Events</button>
     </div>
-
-    <div class="section" style="margin-top: 24px;">
-      <div class="section-title">⚙️ Default Filters</div>
-      <div class="input-group">
-        <label>
-          <input type="checkbox" id="default-free-only"> Show only free events by default
-        </label>
-      </div>
-      <div class="input-group">
-        <label>
-          <input type="checkbox" id="auto-hide-past"> Auto-hide past events
-        </label>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" id="save-btn">💾 Save Preferences</button>
-    <button class="btn btn-secondary" id="reset-btn">🔄 Reset to Defaults</button>
 
     <div class="status" id="status"></div>
 
