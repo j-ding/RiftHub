@@ -212,7 +212,7 @@ function loadMyEvents() {
             <div class="event-details">
               ${event.date ? `<div class="event-detail-row"><span class="event-detail-icon">📅</span> ${event.date}</div>` : ''}
               ${event.time ? `<div class="event-detail-row"><span class="event-detail-icon">⏰</span> ${event.time}</div>` : ''}
-              ${event.location ? `<div class="event-detail-row"><span class="event-detail-icon">📍</span> ${event.location}</div>` : ''}
+              ${event.location ? `<div class="event-detail-row"><span class="event-detail-icon">📍</span> <a href="#" class="event-address-link" data-address="${event.location.replace(/"/g, '&quot;')}">${event.location}</a></div>` : ''}
               ${event.store ? `<div class="event-detail-row"><span class="event-detail-icon">🏪</span> ${event.store}</div>` : ''}
               ${event.format && event.format.toLowerCase() !== 'other' ? `<div class="event-detail-row"><span class="event-detail-icon">🎯</span> ${event.format}</div>` : ''}
               ${capacityInfo}
@@ -249,6 +249,18 @@ function loadMyEvents() {
           const eventId = link.dataset.eventId;
           if (eventId) {
             chrome.tabs.create({ url: `https://locator.riftbound.uvsgames.com/events/${eventId}` });
+          }
+        });
+      });
+
+      // Add click handlers for address links (open in Google Maps)
+      container.querySelectorAll('.event-address-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const address = link.dataset.address;
+          if (address) {
+            chrome.tabs.create({ url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` });
           }
         });
       });
@@ -335,7 +347,7 @@ async function fetchAllApiEvents() {
   return allEvents;
 }
 
-// Enrich event IDs with full API data
+// Enrich event IDs with full API data by fetching each event directly
 async function enrichEventIdsWithApi(eventIds) {
   if (!eventIds || eventIds.length === 0) {
     console.log('[RiftHub Popup] No event IDs to enrich');
@@ -343,45 +355,32 @@ async function enrichEventIdsWithApi(eventIds) {
   }
 
   console.log('[RiftHub Popup] Enriching event IDs:', eventIds);
-  updateSyncProgress(getRandomMessage('matching'), `${eventIds.length} events to check`);
+  updateSyncProgress(getRandomMessage('fetchingApi'), `Fetching ${eventIds.length} events`);
 
-  // Fetch ALL upcoming events from API with pagination
-  const allApiEvents = await fetchAllApiEvents();
-
-  console.log('[RiftHub Popup] Total API events fetched:', allApiEvents.length);
-
-  if (allApiEvents.length === 0) {
-    console.log('[RiftHub Popup] No API events returned - API may be down or blocked');
-    return [];
-  }
-
-  // Log first few API events to see their structure
-  console.log('[RiftHub Popup] Sample API event:', allApiEvents[0]);
-
-  updateSyncProgress(getRandomMessage('matching'), `Checking ${eventIds.length} events`);
-
-  // Match event IDs with API events
   const enrichedEvents = [];
-  let matchedCount = 0;
+  let fetchedCount = 0;
   let notFoundCount = 0;
 
+  // Fetch each event directly by ID (much faster than fetching all 4500+ events)
   for (const eventId of eventIds) {
-    const apiEvent = allApiEvents.find(e => e.id === eventId);
+    updateSyncProgress(getRandomMessage('fetchingApi'), `Fetching event ${fetchedCount + 1}/${eventIds.length}`);
+
+    const apiEvent = await window.RiftboundAPI.fetchEventById(eventId);
 
     if (apiEvent) {
       const transformed = window.RiftboundAPI.transformApiEvent(apiEvent);
       transformed.isRegistered = true;
       enrichedEvents.push(transformed);
-      matchedCount++;
-      console.log('[RiftHub Popup] Matched event:', transformed.title, '(ID:', eventId, ')');
+      fetchedCount++;
+      console.log('[RiftHub Popup] Fetched event:', transformed.title, '(ID:', eventId, ')');
     } else {
       notFoundCount++;
-      console.log('[RiftHub Popup] Event ID not found in API (likely past event):', eventId);
+      console.log('[RiftHub Popup] Event ID not found (likely past event):', eventId);
     }
   }
 
-  console.log(`[RiftHub Popup] Matching complete: ${matchedCount} matched, ${notFoundCount} not found`);
-  updateSyncProgress(getRandomMessage('almostDone'), `Found ${matchedCount} upcoming events`);
+  console.log(`[RiftHub Popup] Fetch complete: ${fetchedCount} found, ${notFoundCount} not found`);
+  updateSyncProgress(getRandomMessage('almostDone'), `Found ${fetchedCount} upcoming events`);
   return enrichedEvents;
 }
 
@@ -392,34 +391,29 @@ async function syncMyEvents() {
   // First, try to find an existing My Events tab
   chrome.tabs.query({ url: 'https://locator.riftbound.uvsgames.com/my-events*' }, async (tabs) => {
     if (tabs && tabs.length > 0) {
-      // Found an existing My Events tab, send sync message
+      // Found an existing My Events tab - always refresh to get latest data
       const myEventsTab = tabs[0];
-      updateSyncProgress(getRandomMessage('gettingIds'), 'Found My Events tab');
+      updateSyncProgress(getRandomMessage('lookingForPage'), 'Refreshing to get latest events...');
 
-      chrome.tabs.sendMessage(myEventsTab.id, { action: 'getEventIds' }, async (response) => {
-        if (chrome.runtime.lastError) {
-          // Content script not loaded, reload the tab and wait
-          updateSyncProgress(getRandomMessage('lookingForPage'), 'Refreshing page...');
-          chrome.tabs.reload(myEventsTab.id, {}, () => {
-            // Wait for page to load, then try to get IDs from storage
-            setTimeout(async () => {
+      // Force reload the tab to ensure we get fresh data
+      chrome.tabs.reload(myEventsTab.id, {}, () => {
+        // Wait for page to fully load and content script to extract IDs
+        setTimeout(async () => {
+          // Try to get fresh IDs from the content script
+          chrome.tabs.sendMessage(myEventsTab.id, { action: 'getEventIds' }, async (response) => {
+            if (chrome.runtime.lastError || !response || !response.success) {
+              // Fall back to storage if content script failed
               await processEventIdsFromStorage();
-            }, 4000);
+            } else {
+              await processEventIds(response.eventIds);
+            }
           });
-          return;
-        }
-
-        if (response && response.success && response.eventIds) {
-          await processEventIds(response.eventIds);
-        } else {
-          // Try getting from storage
-          await processEventIdsFromStorage();
-        }
+        }, 4000);
       });
     } else {
       // No My Events tab found, open one
       updateSyncProgress(getRandomMessage('lookingForPage'), 'Opening page...');
-      chrome.tabs.create({ url: 'https://locator.riftbound.uvsgames.com/my-events', active: false }, (newTab) => {
+      chrome.tabs.create({ url: 'https://locator.riftbound.uvsgames.com/my-events', active: false }, () => {
         // Wait for page to load and content script to save IDs
         setTimeout(async () => {
           await processEventIdsFromStorage();

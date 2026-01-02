@@ -30,7 +30,7 @@ icons/new/
 content.js
 styles.css
 
-# Documentation artifacts (keep only README)
+# Documentation artifacts (keep only README and PRIVACY_POLICY)
 START_HERE.html
 create-icons.html
 GETTING_STARTED.md
@@ -43,7 +43,6 @@ INDEX.md
 CONTRIBUTING.md
 DEPLOYMENT_CHECKLIST.md
 LICENSE
-PRIVACY_POLICY.md
 PRODUCTION_READY.md
 QUICK_START_DEPLOYMENT.md
 STORE_DESCRIPTION.md
