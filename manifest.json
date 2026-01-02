@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "RiftHub",
   "version": "1.0.0",
-  "description": "Track your registered Riftbound events, search for nearby tournaments, and add events to Google Calendar",
+  "description": "Your Riftbound Event Companion! Track registered tournaments, search nearby events, and view everything in a mini calendar.",
   "permissions": [
     "storage",
     "tabs"
