@@ -2,12 +2,19 @@
 
 🎴 **Your Riftbound Event Companion!** Tired of manually tracking your registered Riftbound tournaments and searching for nearby events? This extension puts all your event information in one beautiful popup with a mini calendar view.
 
+## What's New in v1.0.1
+
+- **International location search** - Search for events worldwide, not just US!
+- **Clickable addresses** - Tap any event address to open in Google Maps
+- **Faster sync** - Events load individually instead of fetching thousands
+- **All US zip codes now supported**
+
 ## Key Features
 
-- **Event Search** - Find tournaments near any US location by zip code or city
+- **Event Search** - Find tournaments near any US or international location
 - **Mini Calendar** - Visual overview of all upcoming events with color-coded dots
 - **My Events Sync** - Automatically imports your registered events from the Riftbound locator
-- **Full Event Details** - Store name, address, capacity, price, and registration count
+- **Full Event Details** - Store name, clickable address (opens Google Maps), capacity, price, and registration count
 - **Event Type Badges** - Color-coded for Summoner Skirmish, Nexus Night, Riftbound Open, and more
 - **Registration Status** - See how many spots are filled (e.g., "28/32 registered")
 - **Smart Filtering** - Past events automatically hidden
@@ -25,6 +32,7 @@
 
 ## Search Features
 
+- US & International location support
 - Location autocomplete suggestions
 - Adjustable search radius
 - Results sorted by distance
@@ -33,7 +41,7 @@
 ## Privacy & Security
 
 - All data stored locally in your browser
-- Only communicates with official Riftbound APIs
+- Only communicates with official Riftbound APIs and OpenStreetMap for geocoding
 - No tracking or ads
 - No account required
 
