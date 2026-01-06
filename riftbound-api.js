@@ -6,18 +6,50 @@ const RIFTBOUND_API_BASE = 'https://api.cloudflare.riftbound.uvsgames.com/hydrap
 
 /**
  * Geocode a location string (city, zip code, address) to lat/lng coordinates
- * Uses US Census Geocoder API (free, no API key, works from extensions)
- * @param {string} query - Location query (e.g., "30022", "Atlanta, GA", "Houston")
+ * Uses US Census Geocoder API first (faster for US), then falls back to OpenStreetMap Nominatim for international
+ * @param {string} query - Location query (e.g., "30022", "Atlanta, GA", "Houston", "London, UK")
  * @returns {Promise<{lat: number, lng: number, displayName: string}|null>}
  */
 async function geocodeLocation(query) {
   if (!query || query.trim().length < 2) return null;
 
-  try {
-    const trimmedQuery = query.trim();
+  const trimmedQuery = query.trim();
 
-    // Use US Census Geocoder API
-    const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(trimmedQuery)}&benchmark=Public_AR_Current&format=json`;
+  // Check if it's a US zip code (5 digits)
+  const isUSZipCode = /^\d{5}$/.test(trimmedQuery);
+
+  // For US zip codes, use Nominatim directly (more reliable for zip-only queries)
+  if (isUSZipCode) {
+    // Add "USA" to help Nominatim identify it as a US zip code
+    const nominatimResult = await geocodeWithNominatim(trimmedQuery + ', USA');
+    if (nominatimResult) {
+      return nominatimResult;
+    }
+  }
+
+  // Try US Census Geocoder (works well for full addresses and city names)
+  const censusResult = await geocodeWithCensus(trimmedQuery);
+  if (censusResult) {
+    return censusResult;
+  }
+
+  // Fall back to OpenStreetMap Nominatim for international locations or if Census failed
+  const nominatimResult = await geocodeWithNominatim(trimmedQuery);
+  if (nominatimResult) {
+    return nominatimResult;
+  }
+
+  return null;
+}
+
+/**
+ * Geocode using US Census Bureau API
+ * @param {string} query - Location query
+ * @returns {Promise<{lat: number, lng: number, displayName: string}|null>}
+ */
+async function geocodeWithCensus(query) {
+  try {
+    const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(query)}&benchmark=Public_AR_Current&format=json`;
 
     const response = await fetch(url);
 
@@ -37,10 +69,40 @@ async function geocodeLocation(query) {
       };
     }
 
-    // If Census fails, try a hardcoded lookup for common zip codes
-    const zipLookup = getHardcodedZipLocation(trimmedQuery);
-    if (zipLookup) {
-      return zipLookup;
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Geocode using OpenStreetMap Nominatim API (works internationally)
+ * @param {string} query - Location query
+ * @returns {Promise<{lat: number, lng: number, displayName: string}|null>}
+ */
+async function geocodeWithNominatim(query) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'RiftHub Chrome Extension (https://github.com/j-ding/RiftHub)'
+      }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const results = await response.json();
+
+    if (results && results.length > 0) {
+      const match = results[0];
+      return {
+        lat: parseFloat(match.lat),
+        lng: parseFloat(match.lon),
+        displayName: match.display_name,
+      };
     }
 
     return null;
@@ -49,29 +111,10 @@ async function geocodeLocation(query) {
   }
 }
 
-// Hardcoded zip code lookups for common areas (fallback)
-function getHardcodedZipLocation(query) {
-  const zipLookup = {
-    '30022': { lat: 34.0289, lng: -84.1986, displayName: 'Alpharetta, GA 30022' },
-    '30024': { lat: 34.0712, lng: -84.0710, displayName: 'Suwanee, GA 30024' },
-    '30097': { lat: 34.0234, lng: -84.1435, displayName: 'Duluth, GA 30097' },
-    '30005': { lat: 34.0854, lng: -84.2108, displayName: 'Alpharetta, GA 30005' },
-    '30009': { lat: 34.0729, lng: -84.2941, displayName: 'Alpharetta, GA 30009' },
-    '30004': { lat: 34.1254, lng: -84.2774, displayName: 'Alpharetta, GA 30004' },
-    '30076': { lat: 34.0265, lng: -84.2305, displayName: 'Roswell, GA 30076' },
-    '30075': { lat: 33.9982, lng: -84.3583, displayName: 'Roswell, GA 30075' },
-    '30328': { lat: 33.9321, lng: -84.3880, displayName: 'Atlanta, GA 30328' },
-    '30319': { lat: 33.8729, lng: -84.3359, displayName: 'Atlanta, GA 30319' },
-    '30326': { lat: 33.8463, lng: -84.3621, displayName: 'Atlanta, GA 30326' },
-    '30339': { lat: 33.8634, lng: -84.4647, displayName: 'Atlanta, GA 30339' },
-  };
-
-  return zipLookup[query] || null;
-}
 
 /**
  * Get location suggestions for autocomplete
- * Returns suggestions from hardcoded common locations + zip code matches
+ * Uses Nominatim for live suggestions, with common locations as instant fallback
  * @param {string} query - Partial location query
  * @returns {Promise<Array<{lat: number, lng: number, displayName: string, type: string}>>}
  */
@@ -85,9 +128,9 @@ async function getLocationSuggestions(query) {
     return [];
   }
 
-  // Common US cities and locations for suggestions
+  // Common cities for instant suggestions (no API call needed)
   const commonLocations = [
-    { lat: 34.0289, lng: -84.1986, displayName: 'Alpharetta, GA 30022', type: 'city' },
+    { lat: 34.0289, lng: -84.1986, displayName: 'Alpharetta, GA', type: 'city' },
     { lat: 33.7490, lng: -84.3880, displayName: 'Atlanta, GA', type: 'city' },
     { lat: 34.0522, lng: -118.2437, displayName: 'Los Angeles, CA', type: 'city' },
     { lat: 40.7128, lng: -74.0060, displayName: 'New York, NY', type: 'city' },
@@ -108,18 +151,32 @@ async function getLocationSuggestions(query) {
     { lat: 34.0234, lng: -84.1435, displayName: 'Duluth, GA', type: 'city' },
     { lat: 34.0265, lng: -84.2305, displayName: 'Roswell, GA', type: 'city' },
     { lat: 34.0126, lng: -84.0679, displayName: 'Johns Creek, GA', type: 'city' },
+    // International cities
+    { lat: 51.5074, lng: -0.1278, displayName: 'London, UK', type: 'city' },
+    { lat: 48.8566, lng: 2.3522, displayName: 'Paris, France', type: 'city' },
+    { lat: 35.6762, lng: 139.6503, displayName: 'Tokyo, Japan', type: 'city' },
+    { lat: 49.2827, lng: -123.1207, displayName: 'Vancouver, Canada', type: 'city' },
+    { lat: 43.6532, lng: -79.3832, displayName: 'Toronto, Canada', type: 'city' },
+    { lat: -33.8688, lng: 151.2093, displayName: 'Sydney, Australia', type: 'city' },
+    { lat: 52.5200, lng: 13.4050, displayName: 'Berlin, Germany', type: 'city' },
   ];
 
-  // Check for zip code match from hardcoded list
+  // For 5-digit zip codes, use Nominatim to get the location
   if (/^\d{5}$/.test(trimmedQuery)) {
-    const zipResult = getHardcodedZipLocation(trimmedQuery);
-    if (zipResult) {
-      return [{ ...zipResult, type: 'zip code' }];
+    try {
+      const result = await geocodeWithNominatim(trimmedQuery + ', USA');
+      if (result) {
+        // Shorten the display name for zip codes
+        const shortName = result.displayName.split(',').slice(0, 3).join(',');
+        return [{ lat: result.lat, lng: result.lng, displayName: shortName, type: 'zip code' }];
+      }
+    } catch (e) {
+      // Fall through to return empty
     }
     return [];
   }
 
-  // Filter common locations by query
+  // Filter common locations by query for instant results
   const matches = commonLocations.filter(loc =>
     loc.displayName.toLowerCase().includes(trimmedQuery)
   );

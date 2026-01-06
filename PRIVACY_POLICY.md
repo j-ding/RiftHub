@@ -32,7 +32,8 @@ All data is stored locally on your device using Chrome's built-in storage API. T
 
 The extension communicates with the following services:
 1. **Riftbound API** (api.cloudflare.riftbound.uvsgames.com) - To fetch event details
-2. **US Census Geocoding Service** (geocoding.geo.census.gov) - To convert location queries to coordinates
+2. **US Census Geocoding Service** (geocoding.geo.census.gov) - To convert US location queries to coordinates
+3. **OpenStreetMap Nominatim** (nominatim.openstreetmap.org) - To convert international location queries to coordinates (fallback for non-US locations)
 
 These are the only external services the extension communicates with.
 

@@ -10,7 +10,8 @@
   "host_permissions": [
     "https://locator.riftbound.uvsgames.com/*",
     "https://api.cloudflare.riftbound.uvsgames.com/*",
-    "https://geocoding.geo.census.gov/*"
+    "https://geocoding.geo.census.gov/*",
+    "https://nominatim.openstreetmap.org/*"
   ],
   "content_scripts": [
     {
