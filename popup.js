@@ -1164,6 +1164,7 @@ let autocompleteState = {
   suggestions: [],
   selectedIndex: -1,
   debounceTimer: null,
+  hideTimer: null, // Timer for auto-hiding "no results" message
   selectedLocation: null // Store the selected lat/lng
 };
 
@@ -1173,11 +1174,17 @@ function showSuggestions(suggestions) {
   autocompleteState.suggestions = suggestions;
   autocompleteState.selectedIndex = -1;
 
+  // Clear any pending hide timer from previous "no results" message
+  if (autocompleteState.hideTimer) {
+    clearTimeout(autocompleteState.hideTimer);
+    autocompleteState.hideTimer = null;
+  }
+
   if (suggestions.length === 0) {
     // Show "no results" message
     container.innerHTML = '<div class="suggestion-loading">No locations found. Try a different search.</div>';
     container.classList.add('show');
-    setTimeout(() => hideSuggestions(), 2000);
+    autocompleteState.hideTimer = setTimeout(() => hideSuggestions(), 2000);
     return;
   }
 
@@ -1208,6 +1215,12 @@ function hideSuggestions() {
   const container = document.getElementById('location-suggestions');
   container.classList.remove('show');
   autocompleteState.selectedIndex = -1;
+
+  // Clear any pending hide timer
+  if (autocompleteState.hideTimer) {
+    clearTimeout(autocompleteState.hideTimer);
+    autocompleteState.hideTimer = null;
+  }
 }
 
 // Select a suggestion
@@ -1285,6 +1298,12 @@ function fetchSuggestionsDebounced(query) {
   // Clear any pending request
   if (autocompleteState.debounceTimer) {
     clearTimeout(autocompleteState.debounceTimer);
+  }
+
+  // Clear any pending hide timer from "no results" message
+  if (autocompleteState.hideTimer) {
+    clearTimeout(autocompleteState.hideTimer);
+    autocompleteState.hideTimer = null;
   }
 
   // Clear selected location when user types
