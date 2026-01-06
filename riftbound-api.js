@@ -6,7 +6,7 @@ const RIFTBOUND_API_BASE = 'https://api.cloudflare.riftbound.uvsgames.com/hydrap
 
 /**
  * Geocode a location string (city, zip code, address) to lat/lng coordinates
- * Uses US Census Geocoder API first (faster for US), then falls back to OpenStreetMap Nominatim for international
+ * Uses local US zip code database first (instant), then falls back to external APIs
  * @param {string} query - Location query (e.g., "30022", "Atlanta, GA", "Houston", "London, UK")
  * @returns {Promise<{lat: number, lng: number, displayName: string}|null>}
  */
@@ -18,12 +18,11 @@ async function geocodeLocation(query) {
   // Check if it's a US zip code (5 digits)
   const isUSZipCode = /^\d{5}$/.test(trimmedQuery);
 
-  // For US zip codes, use Nominatim directly (more reliable for zip-only queries)
-  if (isUSZipCode) {
-    // Add "USA" to help Nominatim identify it as a US zip code
-    const nominatimResult = await geocodeWithNominatim(trimmedQuery + ', USA');
-    if (nominatimResult) {
-      return nominatimResult;
+  // For US zip codes, use local database (instant, no API call)
+  if (isUSZipCode && typeof lookupZipCode === 'function') {
+    const zipResult = lookupZipCode(trimmedQuery);
+    if (zipResult) {
+      return zipResult;
     }
   }
 
@@ -161,17 +160,13 @@ async function getLocationSuggestions(query) {
     { lat: 52.5200, lng: 13.4050, displayName: 'Berlin, Germany', type: 'city' },
   ];
 
-  // For 5-digit zip codes, use Nominatim to get the location
+  // For 5-digit zip codes, use local database (instant lookup)
   if (/^\d{5}$/.test(trimmedQuery)) {
-    try {
-      const result = await geocodeWithNominatim(trimmedQuery + ', USA');
+    if (typeof lookupZipCode === 'function') {
+      const result = lookupZipCode(trimmedQuery);
       if (result) {
-        // Shorten the display name for zip codes
-        const shortName = result.displayName.split(',').slice(0, 3).join(',');
-        return [{ lat: result.lat, lng: result.lng, displayName: shortName, type: 'zip code' }];
+        return [{ lat: result.lat, lng: result.lng, displayName: result.displayName, type: 'zip code' }];
       }
-    } catch (e) {
-      // Fall through to return empty
     }
     return [];
   }
