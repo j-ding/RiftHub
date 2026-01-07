@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RiftHub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Your Riftbound Event Companion! Track registered tournaments, search nearby events, and view everything in a mini calendar.",
   "permissions": [
     "storage",
