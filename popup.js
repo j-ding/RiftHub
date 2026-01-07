@@ -37,6 +37,20 @@ const SYNC_MESSAGES = {
     "Loading complete. GLHF!",
     "Rift stabilized!",
     "No minions were harmed in this process."
+  ],
+  geocoding: [
+    "Pinpointing coordinates...",
+    "Mapping the battlefield...",
+    "Calculating spatial distortions...",
+    "Triangulating location...",
+    "Consulting ancient maps..."
+  ],
+  searching: [
+    "Scouting nearby tournaments...",
+    "Scanning for Riftbound activity...",
+    "Summoning local events...",
+    "Detecting tournament energy...",
+    "Searching across dimensions..."
   ]
 };
 
@@ -928,7 +942,7 @@ async function searchEvents() {
   searchState.isLoading = true;
   resultsContainer.innerHTML = `
     <div class="search-loading" style="margin-top: 12px;">
-      <span class="spinner"></span> Geocoding location...
+      <span class="spinner"></span> ${getRandomMessage('geocoding')}
     </div>
   `;
 
@@ -968,7 +982,7 @@ async function searchEvents() {
     // Update loading message
     resultsContainer.innerHTML = `
       <div class="search-loading" style="margin-top: 12px;">
-        <span class="spinner"></span> Searching near ${geoResult.displayName.split(',')[0]}...
+        <span class="spinner"></span> ${getRandomMessage('searching')}
       </div>
     `;
 
