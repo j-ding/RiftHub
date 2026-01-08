@@ -84,13 +84,33 @@ See [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for full details.
 ### From Chrome Web Store
 *(Coming soon)*
 
-### From Source
+### From Firefox Add-ons
+*(Coming soon)*
+
+### From Source (Chrome)
 
 1. Clone or download this repository
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" (toggle in top right)
 4. Click "Load unpacked"
 5. Select the extension folder
+
+### From Source (Firefox)
+
+1. Clone or download this repository
+2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
+3. Click "Load Temporary Add-on..."
+4. Select the `manifest.json` file in the extension folder
+5. The extension will be loaded (note: temporary add-ons are removed when Firefox closes)
+
+**For permanent Firefox installation:**
+1. Zip the extension files (manifest.json, popup.html, popup.js, etc.)
+2. Rename the `.zip` to `.xpi`
+3. Open `about:addons` in Firefox
+4. Click the gear icon and select "Install Add-on From File..."
+5. Select the `.xpi` file
+
+**Note:** Firefox requires extensions to be signed for permanent installation in release versions. For development, use Firefox Developer Edition or Nightly with `xpinstall.signatures.required` set to `false` in `about:config`.
 
 ## Files
 

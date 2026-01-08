@@ -1,6 +1,12 @@
 // My Events page - extracts event IDs from registered events
 // The popup will handle API calls since content scripts have CORS restrictions
 
+// Cross-browser compatibility: Firefox supports both 'browser' and 'chrome' namespaces
+// Chrome only supports 'chrome'. We use 'chrome' which works in both.
+if (typeof browser !== 'undefined' && typeof chrome === 'undefined') {
+  globalThis.chrome = browser;
+}
+
 function extractEventIds() {
   const eventIds = [];
 

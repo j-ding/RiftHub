@@ -1,5 +1,11 @@
 // Popup script for RiftHub
 
+// Cross-browser compatibility: Firefox supports both 'browser' and 'chrome' namespaces
+// Chrome only supports 'chrome'. We use 'chrome' which works in both.
+if (typeof browser !== 'undefined' && typeof chrome === 'undefined') {
+  globalThis.chrome = browser;
+}
+
 // Fun loading messages for each sync stage
 const SYNC_MESSAGES = {
   lookingForPage: [
