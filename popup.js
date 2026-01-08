@@ -553,7 +553,9 @@ function getEventDotClass(type) {
   const typeLower = type.toLowerCase();
   if (typeLower.includes('nexus')) return 'nexus-night';
   if (typeLower.includes('skirmish')) return 'summoner-skirmish';
-  return 'riftbound-open';
+  if (typeLower.includes('pre-release') || typeLower.includes('prerelease') || typeLower.includes('pre release')) return 'pre-release';
+  if (typeLower.includes('open') || typeLower.includes('riftbound')) return 'riftbound-open';
+  return '';
 }
 
 // Parse event date to Date object
@@ -919,6 +921,7 @@ function getSearchResultClass(title) {
   const titleLower = title.toLowerCase();
   if (titleLower.includes('nexus')) return 'nexus-night';
   if (titleLower.includes('skirmish')) return 'summoner-skirmish';
+  if (titleLower.includes('pre-release') || titleLower.includes('prerelease') || titleLower.includes('pre release')) return 'pre-release';
   if (titleLower.includes('open') || titleLower.includes('riftbound')) return 'riftbound-open';
   return '';
 }
@@ -1035,8 +1038,14 @@ async function searchEvents() {
             return typeLower.includes('nexus') || titleLower.includes('nexus');
           case 'skirmish':
             return typeLower.includes('skirmish') || titleLower.includes('skirmish');
+          case 'prerelease':
+            return typeLower.includes('pre-release') || typeLower.includes('prerelease') || typeLower.includes('pre release') ||
+                   titleLower.includes('pre-release') || titleLower.includes('prerelease') || titleLower.includes('pre release');
           case 'open':
-            return typeLower.includes('open') || titleLower.includes('open');
+            // Exclude pre-release events from "open" category
+            const isPreRelease = typeLower.includes('pre-release') || typeLower.includes('prerelease') || typeLower.includes('pre release') ||
+                                titleLower.includes('pre-release') || titleLower.includes('prerelease') || titleLower.includes('pre release');
+            return !isPreRelease && (typeLower.includes('open') || titleLower.includes('open'));
           case 'free':
             return event.price === 'Free' || event.priceInCents === 0;
           default:
@@ -1052,6 +1061,7 @@ async function searchEvents() {
     const typeLabel = searchState.selectedType === 'all' ? '' :
                       searchState.selectedType === 'nexus' ? 'Nexus Night ' :
                       searchState.selectedType === 'skirmish' ? 'Summoner Skirmish ' :
+                      searchState.selectedType === 'prerelease' ? 'Pre-Release ' :
                       searchState.selectedType === 'open' ? 'Open Play ' :
                       searchState.selectedType === 'free' ? 'Free ' : '';
 
