@@ -1,16 +1,15 @@
 {
   "manifest_version": 3,
   "name": "RiftHub",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Your Riftbound Event Companion! Track registered tournaments, search nearby events, and view everything in a mini calendar.",
   "browser_specific_settings": {
     "gecko": {
       "id": "rifthub@riftbound.uvsgames.com",
       "strict_min_version": "109.0",
       "data_collection_permissions": {
-        "required": false,
-        "disclosed": false,
-        "explanation": "This extension does not collect any user data. All data is stored locally in the browser."
+        "required": ["none"],
+        "optional": []
       }
     }
   },

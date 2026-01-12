@@ -1041,8 +1041,10 @@ async function searchEvents() {
             return typeLower.includes('nexus') || titleLower.includes('nexus');
           case 'skirmish':
             return typeLower.includes('skirmish') || titleLower.includes('skirmish');
+          case 'prerelease':
+            return typeLower.includes('pre/release') || titleLower.includes('prerelease') || titleLower.includes('pre-release') || titleLower.includes('pre-rift') || titleLower.includes('release');
           case 'open':
-            return typeLower.includes('open') || titleLower.includes('open');
+            return (typeLower.includes('open') || titleLower.includes('open')) && !titleLower.includes('prerelease') && !titleLower.includes('pre-release') && !titleLower.includes('pre-rift') && !titleLower.includes('release');
           case 'free':
             return event.price === 'Free' || event.priceInCents === 0;
           default:

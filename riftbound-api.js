@@ -320,6 +320,9 @@ function transformApiEvent(apiEvent) {
   } else if (eventName.includes('nexus night')) {
     type = 'Nexus Night';
     typeColor = '#3b82f6';
+  } else if (eventName.includes('prerelease') || eventName.includes('pre-release') || eventName.includes('pre-rift') || eventName.includes('release')) {
+    type = 'Pre/Release';
+    typeColor = '#14b8a6'; // Teal
   } else if (eventName.includes('riftbound open') || eventName.includes('open play')) {
     type = 'Riftbound Open';
     typeColor = '#f97316';
