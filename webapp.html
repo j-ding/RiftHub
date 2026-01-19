@@ -1013,39 +1013,9 @@
   <script src="riftbound-api.js"></script>
   <script>
     // ============================================
-    // Storage Adapter (localStorage instead of chrome.storage)
+    // Use chrome.storage.local directly (shares data with extension popup)
     // ============================================
-    const storage = {
-      local: {
-        get: (keys, callback) => {
-          const result = {};
-          const keyList = Array.isArray(keys) ? keys : [keys];
-          keyList.forEach(key => {
-            const val = localStorage.getItem(`rifthub_${key}`);
-            if (val) {
-              try {
-                result[key] = JSON.parse(val);
-              } catch (e) {
-                result[key] = val;
-              }
-            }
-          });
-          if (callback) callback(result);
-          return result;
-        },
-        set: (items, callback) => {
-          Object.entries(items).forEach(([key, val]) => {
-            localStorage.setItem(`rifthub_${key}`, JSON.stringify(val));
-          });
-          if (callback) callback();
-        },
-        remove: (keys, callback) => {
-          const keyList = Array.isArray(keys) ? keys : [keys];
-          keyList.forEach(key => localStorage.removeItem(`rifthub_${key}`));
-          if (callback) callback();
-        }
-      }
-    };
+    const storage = chrome.storage;
 
     // ============================================
     // Fun Loading Messages
