@@ -735,9 +735,14 @@ function showSelectedDayEvents(year, month, day) {
         ? `<button class="register-btn" data-event-id="${event.id}" style="margin-top: 6px; padding: 4px 8px; background: #10b981; color: white; border: none; border-radius: 4px; font-size: 10px; cursor: pointer; width: 100%;">📝 Register for Event</button>`
         : '';
 
+      // Make title clickable if event has an ID
+      const titleHtml = event.id
+        ? `<a href="#" class="event-title-link calendar-event-link" data-event-id="${event.id}" style="font-size: 11px;">${event.title}</a>`
+        : `<span style="font-size: 11px;">${event.title}</span>`;
+
       html += `
         <div class="event-card ${priceClass}" style="margin-bottom: 6px; padding: 8px; ${!isRegistered ? 'border-left-color: #3b82f6;' : ''}">
-          <div class="event-title" style="font-size: 11px;">${event.title}${statusBadge}</div>
+          <div class="event-title" style="font-size: 11px;">${titleHtml}${statusBadge}</div>
           <div class="event-details" style="font-size: 10px;">
             ${event.time ? `<div style="margin-bottom: 2px;">⏰ ${event.time}</div>` : ''}
             ${event.store ? `<div>🏪 ${event.store}</div>` : ''}
@@ -759,6 +764,17 @@ function showSelectedDayEvents(year, month, day) {
         if (eventId) {
           const eventUrl = `https://locator.riftbound.uvsgames.com/events/${eventId}`;
           chrome.tabs.create({ url: eventUrl });
+        }
+      });
+    });
+
+    // Add click handlers for event title links
+    content.querySelectorAll('.calendar-event-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const eventId = link.dataset.eventId;
+        if (eventId) {
+          chrome.tabs.create({ url: `https://locator.riftbound.uvsgames.com/events/${eventId}` });
         }
       });
     });
