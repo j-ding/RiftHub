@@ -24,6 +24,7 @@
       padding: 14px 20px;
       text-align: center;
       border-bottom: 1px solid #334155;
+      position: relative;
     }
 
     .header h1 {
@@ -38,6 +39,37 @@
 
     .header h1 img {
       height: 24px;
+    }
+
+    .header-actions {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .open-webapp-btn {
+      background: transparent;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      color: #94a3b8;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .open-webapp-btn:hover {
+      background: #334155;
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+
+    .open-webapp-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     .content {
@@ -780,6 +812,13 @@
 <body>
   <div class="header">
     <h1><img src="icons/image_1.png" alt="">RiftHub</h1>
+    <div class="header-actions">
+      <button id="open-webapp-btn" class="open-webapp-btn" title="Open in Browser">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="content">

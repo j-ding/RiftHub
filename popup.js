@@ -1546,6 +1546,11 @@ document.getElementById('visit-my-events')?.addEventListener('click', (e) => {
 });
 document.getElementById('sync-events-btn').addEventListener('click', syncMyEvents);
 
+// Open web app in browser tab
+document.getElementById('open-webapp-btn')?.addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('webapp.html') });
+});
+
 // Initialize
 initCalendar(); // This will call loadMyEvents() after loading data
 initSearch();
